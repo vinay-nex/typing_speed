@@ -43,57 +43,59 @@ class TypingScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   /// Timer
-                  Obx(
-                    () {
-                      final seconds = controller.seconds.value;
-                      return Text(
-                        "${AppStrings.timeLeft} ${seconds}s",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: seconds < 10 ? AppColors.error : AppColors.textOnPrimary,
-                        ),
-                      );
-                    },
-                  ),
+                  Obx(() {
+                    final seconds = controller.seconds.value;
+                    return Text(
+                      "${AppStrings.timeLeft} ${seconds}s",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: seconds < 10 ? AppColors.error : AppColors.textOnPrimary,
+                      ),
+                    );
+                  }),
 
                   const SizedBox(height: 20),
 
                   /// Highlighted passage
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.accentLight,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 6,
-                          offset: Offset(2, 2),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.accentLight,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 6,
+                            offset: Offset(2, 2),
+                          ),
+                        ],
+                      ),
+                      child: SingleChildScrollView(
+                        child: RichText(
+                          text: TextSpan(
+                            children: List.generate(passage.length, (i) {
+                              Color charColor = Colors.black;
+
+                              if (i < typed.length) {
+                                if (typed[i] == passage[i]) {
+                                  charColor = Colors.blue;
+                                } else {
+                                  charColor = Colors.red;
+                                }
+                              }
+
+                              return TextSpan(
+                                text: passage[i],
+                                style: TextStyle(
+                                  color: charColor,
+                                  fontSize: 18,
+                                ),
+                              );
+                            }),
+                          ),
                         ),
-                      ],
-                    ),
-                    child: RichText(
-                      text: TextSpan(
-                        children: List.generate(passage.length, (i) {
-                          Color charColor = Colors.black;
-
-                          if (i < typed.length) {
-                            if (typed[i] == passage[i]) {
-                              charColor = Colors.blue;
-                            } else {
-                              charColor = Colors.red;
-                            }
-                          }
-
-                          return TextSpan(
-                            text: passage[i],
-                            style: TextStyle(
-                              color: charColor,
-                              fontSize: 18,
-                            ),
-                          );
-                        }),
                       ),
                     ),
                   ),
@@ -102,6 +104,7 @@ class TypingScreen extends StatelessWidget {
 
                   /// Input Box
                   Container(
+                    height: 120, // fixed height for long text input
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
@@ -118,12 +121,13 @@ class TypingScreen extends StatelessWidget {
                       focusNode: controller.focusNode,
                       enabled: controller.isRunning.value,
                       onChanged: (val) => controller.userInput.value = val,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         contentPadding: EdgeInsets.all(12),
                         border: InputBorder.none,
-                        hintText: AppStrings.startTypingHere,
+                        hintText: "Start typing here...",
                       ),
-                      maxLines: 5,
+                      maxLines: null,
+                      keyboardType: TextInputType.multiline,
                       autocorrect: false,
                       enableSuggestions: false,
                       textCapitalization: TextCapitalization.none,
@@ -162,7 +166,6 @@ class TypingScreen extends StatelessWidget {
                             ),
                             onPressed: () {
                               controller.startTest();
-
                               controller.focusNode.requestFocus();
                             },
                             child: Text(

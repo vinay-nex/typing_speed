@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:typing_speed/constants/app_colors.dart';
 import 'package:typing_speed/constants/app_strings.dart';
 import '../controllers/typing_controller.dart';
+import '../utils.dart';
 import 'typing_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -58,7 +59,7 @@ class HomeScreen extends StatelessWidget {
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.all(16),
-                  children: passages.entries.map((entry) {
+                  children: AppUtils().passages.entries.map((entry) {
                     final category = entry.key;
                     final texts = entry.value;
 

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:typing_speed/constants/app_colors.dart';
-import 'package:typing_speed/screens/welcome_screen.dart';
-import 'screens/home_screen.dart';
+import 'package:typing_speed/routes/app_routes.dart';
 
 void main() {
   runApp(const TypingApp());
@@ -16,18 +15,20 @@ class TypingApp extends StatelessWidget {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.purple,
-        scaffoldBackgroundColor: AppColors.primary,
+        scaffoldBackgroundColor: AppColors.scaffoldBg,
         appBarTheme: AppBarTheme(
-          backgroundColor: AppColors.primaryDark,
-          iconTheme: IconThemeData(
-            color: AppColors.textOnPrimary,
+          backgroundColor: AppColors.primaryBlue,
+          foregroundColor: AppColors.textLight,
+          elevation: 0,
+          centerTitle: false,
+          titleTextStyle: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w500,
           ),
-          centerTitle: true,
-          elevation: 4,
         ),
       ),
-      home: const WelcomeScreen(),
+      initialRoute: AppRoutes.splash,
+      getPages: AppRoutes.routes,
     );
   }
 }

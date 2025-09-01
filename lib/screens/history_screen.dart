@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:typing_speed/screens/statistics_screen.dart';
-import '../constants/app_colors.dart';
-import '../constants/app_strings.dart';
+import 'package:typing_speed/constants/app_colors.dart';
+import 'package:typing_speed/constants/app_strings.dart';
+import 'package:typing_speed/screens/result_screen.dart';
 import '../db/db_helper.dart';
-import 'history_comparision.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -22,6 +21,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     loadResults();
   }
 
+  /// Load results
   Future<void> loadResults() async {
     final data = await DBHelper.getResults();
     setState(() {
@@ -32,163 +32,146 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          AppStrings.textHistory,
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-                letterSpacing: 1.2,
+      body: Stack(
+        children: [
+          /// Curved AppBar
+          Container(
+            height: 180,
+            decoration: BoxDecoration(
+              color: AppColors.primaryBlue,
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
               ),
-        ),
-        actions: [
-          IconButton(
-              onPressed: () {
-                Get.to(() => const HistoryComparisonScreen());
-              },
-              icon: Icon(Icons.history))
-        ],
-      ),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.gradient1, AppColors.gradient2],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: results.isEmpty
-                    ? Center(
-                        child: Text(
-                          AppStrings.emptyHistory,
-                          style: TextStyle(
-                            fontSize: 20,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: results.length,
-                        itemBuilder: (context, index) {
-                          final res = results[index];
-                          return InkWell(
-                            onTap: () {
-                              Get.to(() => StatisticsScreen(
-                                    wpm: res['wpm'],
-                                    accuracy: res['accuracy'],
-                                    date: res['date'],
-                                  ));
-                            },
-                            child: Card(
-                              color: Colors.deepPurple.shade200.withOpacity(0.8),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 5,
-                              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              child: ListTile(
-                                title: Text(
-                                  "${AppStrings.wpm}: ${res['wpm']}",
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  "${AppStrings.accuracy}: ${res['accuracy'].toStringAsFixed(2)}%\nDate: ${res['date']}",
-                                  style: const TextStyle(color: Colors.white70, fontSize: 14),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.redAccent,
-        onPressed: () async {
-          /// Show confirmation popup with theme
-          final confirm = await showDialog<bool>(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                backgroundColor: Colors.deepPurple.shade400,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                title: Row(
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.warning_amber_rounded, color: AppColors.warning),
-                    const SizedBox(width: 8),
+                    InkWell(
+                      onTap: () {
+                        Get.back();
+                      },
+                      child: Icon(
+                        Icons.arrow_back,
+                        color: AppColors.textLight,
+                      ),
+                    ),
+                    SizedBox(
+                      width: 12,
+                    ),
                     Text(
-                      AppStrings.deleteHistory,
+                      AppStrings.history,
                       style: TextStyle(
+                        color: AppColors.textLight,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                        color: AppColors.textOnPrimary,
                       ),
                     ),
                   ],
                 ),
-                content: Text(
-                  AppStrings.confirmDeleteHistory,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppColors.textOnPrimary,
+              ),
+            ),
+          ),
+
+          /// Main content overlapping AppBar
+
+          Padding(
+            padding: const EdgeInsets.only(top: 80, left: 16, right: 16, bottom: 16),
+            child: results.isEmpty
+                ? Center(child: Text(AppStrings.noHistoryFound))
+                : ListView.builder(
+                    itemCount: results.length,
+                    itemBuilder: (context, index) {
+                      final result = results[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: GestureDetector(
+                          onTap: () {
+                            Get.to(
+                              () => ResultScreen(
+                                id: result['id'],
+                              ),
+                            );
+                          },
+                          child: _buildHistoryTile(
+                            wpm: result['net_speed'],
+                            accuracy: result['accuracy'].toString(),
+                            duration: result['duration'],
+                            date: result['date'],
+                            time: result['time'],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryTile({
+    required int wpm,
+    required String accuracy,
+    required String duration,
+    required String date,
+    required String time,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Left Side
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "$wpm ${AppStrings.wpm}",
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                actionsPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                actions: [
-                  OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(
-                        color: AppColors.textOnPrimary,
-                        width: 1,
-                      ),
-                    ),
-                    onPressed: () => Navigator.pop(context, false),
-                    child: Text(
-                      AppStrings.no,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: AppColors.textOnPrimary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple,
-                    ),
-                    onPressed: () => Navigator.pop(context, true),
-                    child: Text(
-                      AppStrings.yes,
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textOnPrimary),
-                    ),
-                  ),
-                ],
-              );
-            },
-          );
+                const SizedBox(height: 4),
+                Text("${AppStrings.accuracy}: $accuracy %"),
+                const SizedBox(height: 4),
+                Text("${AppStrings.duration}: $duration"),
+              ],
+            ),
+          ),
 
-          if (confirm == true) {
-            await DBHelper.clearResults();
-            loadResults();
-          }
-        },
-        child: const Icon(Icons.delete, color: Colors.white),
+          // Right Side
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                date,
+                style: const TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                time,
+                style: const TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

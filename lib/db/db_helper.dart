@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+
+import '../model/result_model.dart';
 
 class DBHelper {
   static Database? _db;
@@ -8,16 +11,25 @@ class DBHelper {
   static const String dbName = "typing_test.db";
   static const String resultsTable = "results";
   static const String userTable = "user";
-
   static const int version = 1;
 
-  // Results columns
+  /// Results columns
   static const String columnId = "id";
-  static const String columnWpm = "wpm";
+  static const String columnNetSpeed = "net_speed";
+  static const String columnGrossSpeed = "gross_speed";
+  static const String columnKeystrokes = "keystrokes";
+  static const String columnBackspace = "backspace";
+  static const String columnCorrectWords = "correct_words";
+  static const String columnWrongWords = "wrong_words";
   static const String columnAccuracy = "accuracy";
+  static const String columnTypedText = "typed_text";
+  static const String columnOriginalText = "original_text";
+  static const String columnDuration = "duration";
+  static const String columnMode = "mode";
   static const String columnDate = "date";
+  static const String columnTime = "time";
 
-  // User columns
+  /// User columns
   static const String columnUserId = "id";
   static const String columnUserName = "name";
 
@@ -25,6 +37,15 @@ class DBHelper {
     if (_db != null) return _db!;
     _db = await initDb();
     return _db!;
+  }
+
+  /// Delete old DB
+  static Future<void> deleteDatabaseFile() async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, dbName);
+    if (await File(path).exists()) {
+      await deleteDatabase(path);
+    }
   }
 
   static Future<Database> initDb() async {
@@ -35,17 +56,25 @@ class DBHelper {
       path,
       version: version,
       onCreate: (Database db, int version) async {
-        // Create results table
         await db.execute('''
           CREATE TABLE $resultsTable (
             $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
-            $columnWpm INTEGER NOT NULL,
-            $columnAccuracy REAL NOT NULL,
-            $columnDate TEXT NOT NULL
+            $columnNetSpeed INTEGER,
+            $columnGrossSpeed INTEGER,
+            $columnKeystrokes INTEGER,
+            $columnBackspace INTEGER,
+            $columnCorrectWords INTEGER,
+            $columnWrongWords INTEGER,
+            $columnAccuracy REAL,
+            $columnTypedText TEXT,
+            $columnOriginalText TEXT,
+            $columnDuration TEXT,
+            $columnMode TEXT,
+            $columnDate TEXT,
+            $columnTime TEXT
           )
         ''');
 
-        // Create user table
         await db.execute('''
           CREATE TABLE $userTable (
             $columnUserId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,38 +86,83 @@ class DBHelper {
   }
 
   /// Insert typing result
-  static Future<int> insertResult(int wpm, double accuracy) async {
+  static Future<int> insertResult({
+    required int netSpeed,
+    required int grossSpeed,
+    required int keystrokes,
+    required int backspace,
+    required int correctWords,
+    required int wrongWords,
+    required double accuracy,
+    required String typedText,
+    required String originalText,
+    required String duration,
+    required String mode,
+  }) async {
     final dbClient = await db;
     return await dbClient.insert(resultsTable, {
-      columnWpm: wpm,
+      columnNetSpeed: netSpeed,
+      columnGrossSpeed: grossSpeed,
+      columnKeystrokes: keystrokes,
+      columnBackspace: backspace,
+      columnCorrectWords: correctWords,
+      columnWrongWords: wrongWords,
       columnAccuracy: accuracy,
-      columnDate: DateFormat("d MMMM yyyy : h:mm a").format(DateTime.now()),
+      columnTypedText: typedText,
+      columnOriginalText: originalText,
+      columnDuration: duration,
+      columnMode: mode,
+      columnDate: DateFormat("d MMMM yyyy").format(DateTime.now()),
+      columnTime: DateFormat("h:mm a").format(DateTime.now()),
     });
   }
 
-  /// Fetch all results (latest first)
+  /// Fetch all results
   static Future<List<Map<String, dynamic>>> getResults() async {
     final dbClient = await db;
     return await dbClient.query(resultsTable, orderBy: "$columnId DESC");
   }
 
-  /// Clear all results
+  /// Get latest result
+  static Future<ResultModel?> getLatestResult() async {
+    final dbClient = await db;
+    final results = await dbClient.query(resultsTable, orderBy: "$columnId DESC", limit: 1);
+
+    if (results.isNotEmpty) {
+      return ResultModel.fromMap(results.first);
+    }
+
+    return null;
+  }
+
+  /// Get result by ID
+  static Future<ResultModel?> getResultById(int id) async {
+    final dbClient = await db;
+    final result = await dbClient.query(
+      resultsTable,
+      where: "$columnId = ?",
+      whereArgs: [id],
+    );
+
+    if (result.isNotEmpty) {
+      return ResultModel.fromMap(result.first);
+    }
+
+    return null;
+  }
+
+  /// Clear results
   static Future<int> clearResults() async {
     final dbClient = await db;
     return await dbClient.delete(resultsTable);
   }
 
-  /// ================= USER TABLE FUNCTIONS =================
-
-  /// Insert user name
+  /// ================= USER =================
   static Future<int> insertUser(String name) async {
     final dbClient = await db;
-    return await dbClient.insert(userTable, {
-      columnUserName: name,
-    });
+    return await dbClient.insert(userTable, {columnUserName: name});
   }
 
-  /// Get the latest user name
   static Future<String?> getUser() async {
     final dbClient = await db;
     final result = await dbClient.query(userTable, orderBy: "$columnUserId DESC", limit: 1);
@@ -98,7 +172,6 @@ class DBHelper {
     return null;
   }
 
-  /// Update user name (optional)
   static Future<int> updateUser(String name) async {
     final dbClient = await db;
     final idResult = await getUserId();
@@ -109,7 +182,6 @@ class DBHelper {
     }
   }
 
-  /// Get latest user ID
   static Future<int?> getUserId() async {
     final dbClient = await db;
     final result = await dbClient.query(userTable, orderBy: "$columnUserId DESC", limit: 1);

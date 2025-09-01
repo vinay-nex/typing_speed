@@ -1,36 +1,21 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  /// Primary Theme
-  static const Color primary = Color(0xFF673AB7);
-  static const Color primaryDark = Color(0xFF4527A0);
+  /// Primary brand color (AppBar)
+  static const Color primaryBlue = Color(0xFF106FA4);
 
-  /// gradient color
-  static const Color gradient1 = Color(0xFF6A11CB);
-  static const Color gradient2 = Color(0xFF2575FC);
+  /// Scaffold background (very light blue shade)
+  static const Color scaffoldBg = Color(0xFFEFF3F8);
 
-  /// Accent
-  static const Color accent = Color(0xFF4CAF50);
-  static const Color accentLight = Color(0xFFC8E6C9);
-  static const Color accentDark = Color(0xFF2E7D32);
+  /// Text & icon color
+  static const Color textDark = Colors.black87;
+  static const Color textLight = Colors.white;
+  static const Color textGrey = Colors.black54;
+  static const Color textLightGrey = Colors.white70;
 
-  /// Backgrounds
-  static const Color background = Color(0xFFF3E5F5);
-  static const Color cardBackground = Colors.white;
-
-  /// Text
-  static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color textOnPrimary = Colors.white;
-
-  /// Error / Warning
+  /// others
   static const Color error = Color(0xFFE53935);
-  static const Color warning = Color(0xFFFFA000);
-
-  /// Charts
-  static const Color chartWpm = Color(0xFF673AB7);
-  static const Color chartAccuracy = Color(0xFF4CAF50);
-  static const Color chartTrend = Color(0xFFFF9800);
-
-  /// passage card color
+  static const Color success = Colors.green;
+  static const Color blackShadow = Colors.black12;
+  static const Color transparent = Colors.transparent;
 }

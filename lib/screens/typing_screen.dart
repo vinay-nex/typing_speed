@@ -3,182 +3,163 @@ import 'package:get/get.dart';
 import 'package:typing_speed/constants/app_colors.dart';
 import 'package:typing_speed/constants/app_strings.dart';
 import '../controllers/typing_controller.dart';
-import 'result_screen.dart';
+import '../db/db_helper.dart';
+import '../widgets/result_popup.dart';
 
 class TypingScreen extends StatelessWidget {
-  const TypingScreen({super.key});
+  TypingScreen({super.key});
+
+  final controller = Get.put(TypingController());
+  final textController = TextEditingController();
+  void showLatestResultPopup() async {
+    final result = await DBHelper.getLatestResult();
+    if (result != null) {
+      Get.dialog(ResultPopup(
+        result: result,
+      ));
+    } else {}
+  }
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<TypingController>();
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          AppStrings.typingSpeedText,
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-                letterSpacing: 1.2,
+      body: Stack(
+        children: [
+          /// Curved AppBar
+          Container(
+            height: 180,
+            decoration: BoxDecoration(
+              color: AppColors.primaryBlue,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
               ),
-        ),
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.gradient1, AppColors.gradient2],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Obx(() {
-              final passage = controller.textToType.value;
-              final typed = controller.userInput.value;
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    /// Back button
+                    GestureDetector(
+                      onTap: () => Get.back(),
+                      child: const Icon(Icons.cancel_rounded, color: AppColors.textLight, size: 26),
+                    ),
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  /// Timer
-                  Obx(() {
-                    final seconds = controller.seconds.value;
-                    return Text(
-                      "${AppStrings.timeLeft} ${seconds}s",
-                      style: TextStyle(
+                    /// Title
+                    Text(
+                      AppStrings.typingTestStandard,
+                      style: const TextStyle(
+                        color: AppColors.textLight,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: seconds < 10 ? AppColors.error : AppColors.textOnPrimary,
-                      ),
-                    );
-                  }),
-
-                  const SizedBox(height: 20),
-
-                  /// Highlighted passage
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.accentLight,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 6,
-                            offset: Offset(2, 2),
-                          ),
-                        ],
-                      ),
-                      child: SingleChildScrollView(
-                        child: RichText(
-                          text: TextSpan(
-                            children: List.generate(passage.length, (i) {
-                              Color charColor = Colors.black;
-
-                              if (i < typed.length) {
-                                if (typed[i] == passage[i]) {
-                                  charColor = Colors.blue;
-                                } else {
-                                  charColor = Colors.red;
-                                }
-                              }
-
-                              return TextSpan(
-                                text: passage[i],
-                                style: TextStyle(
-                                  color: charColor,
-                                  fontSize: 18,
-                                ),
-                              );
-                            }),
-                          ),
-                        ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 20),
+                    /// Reset button
+                    GestureDetector(
+                      onTap: () {
+                        controller.resetTest();
+                        textController.clear();
+                      },
+                      child: const Icon(Icons.refresh_outlined, color: AppColors.textLight, size: 26),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
 
-                  /// Input Box
-                  Container(
-                    height: 120, // fixed height for long text input
+          /// Main content
+          Padding(
+            padding: const EdgeInsets.only(top: 120),
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: [
+                /// Passage Container
+                Obx(() {
+                  List<String> typedWords = controller.typedText.value.trim().split(" ");
+                  if (typedWords.length == 1 && typedWords.first.isEmpty) typedWords = [];
+
+                  return Container(
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 4,
-                          offset: Offset(2, 2),
-                        ),
+                      color: AppColors.textLight,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(color: AppColors.blackShadow, blurRadius: 6, offset: Offset(0, 3)),
                       ],
                     ),
-                    child: TextField(
-                      controller: controller.textController,
-                      focusNode: controller.focusNode,
-                      enabled: controller.isRunning.value,
-                      onChanged: (val) => controller.userInput.value = val,
-                      decoration: const InputDecoration(
-                        contentPadding: EdgeInsets.all(12),
-                        border: InputBorder.none,
-                        hintText: "Start typing here...",
-                      ),
-                      maxLines: null,
-                      keyboardType: TextInputType.multiline,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      textCapitalization: TextCapitalization.none,
+                    child: Wrap(
+                      children: List.generate(controller.words.length, (index) {
+                        String word = controller.words[index];
+                        Color color = AppColors.textDark;
+                        Color bgColor = AppColors.transparent;
+
+                        if (index < typedWords.length - 1) {
+                          /// Completed words
+                          color = (typedWords[index] == word) ? AppColors.success : AppColors.error;
+                        } else if (index == typedWords.length - 1 && controller.typedText.value.isNotEmpty) {
+                          /// Current word
+                          bgColor = Colors.yellow.withOpacity(0.3);
+                        }
+
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+                          decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(4)),
+                          child: Text(word, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+                        );
+                      }),
                     ),
-                  ),
+                  );
+                }),
 
-                  const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-                  /// Start / Finish Button
-                  Center(
-                    child: controller.isRunning.value
-                        ? ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.redAccent,
-                              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-                              shape: RoundedRectangleBorder(
+                /// TextField + Timer
+                Row(
+                  children: [
+                    Expanded(
+                      child: Obx(() => TextField(
+                            controller: textController,
+                            onChanged: controller.remainingTime.value > 0 ? controller.onTextChanged : null,
+                            enabled: controller.remainingTime.value > 0,
+                            decoration: InputDecoration(
+                              hintText: controller.remainingTime.value > 0 ? "Start typing here..." : "Time is up!",
+                              filled: true,
+                              fillColor: AppColors.textLight,
+                              border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
                               ),
                             ),
-                            onPressed: () {
-                              controller.finishTest();
-                              Get.to(() => const ResultScreen());
-                            },
-                            child: Text(
-                              AppStrings.endTest,
-                              style: TextStyle(fontSize: 16, color: AppColors.textOnPrimary),
-                            ),
-                          )
-                        : ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            onPressed: () {
-                              controller.startTest();
-                              controller.focusNode.requestFocus();
-                            },
-                            child: Text(
-                              AppStrings.startTest,
-                              style: TextStyle(fontSize: 16, color: AppColors.textOnPrimary),
-                            ),
-                          ),
-                  ),
-                ],
-              );
-            }),
+                          )),
+                    ),
+                    const SizedBox(width: 10),
+                    Obx(
+                      () => Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: controller.remainingTime.value <= 10 ? Colors.red : AppColors.primaryBlue,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          "${controller.remainingTime.value ~/ 60}:${(controller.remainingTime.value % 60).toString().padLeft(2, '0')}",
+                          style: const TextStyle(fontSize: 16, color: AppColors.textLight, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+                const Text("Note: Timer will not start until you start typing."),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
